@@ -108,9 +108,11 @@
             }
         }
 
-        function atualizarPainel() {
-            // CHAMADAS COM OS NOMES EXATOS DOS SEUS FEEDS
-            atualizarCamara('temperatura-camara-caf', 'temp-caf', 'status-caf', 'time-caf');
+            function atualizarPainel() {
+            // Use 'temperatura' (que é a Key da imagem) para a CAF
+            atualizarCamara('temperatura', 'temp-caf', 'status-caf', 'time-caf');
+            
+            // Verifique se a Key da CPC também é 'temperatura-2' ou algo assim
             atualizarCamara('temperatura-camara-cpc', 'temp-cpc', 'status-cpc', 'time-cpc');
         }
 
