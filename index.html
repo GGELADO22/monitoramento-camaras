@@ -1,41 +1,83 @@
-<script>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitoramento de Câmaras Frias</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; text-align: center; padding: 50px; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; min-width: 300px; }
+        h1 { color: #333; margin-bottom: 30px; }
+        .temp { font-size: 64px; font-weight: bold; color: #007bff; margin: 20px 0; }
+        .status { padding: 10px 20px; border-radius: 8px; color: white; font-weight: bold; font-size: 1.2em; display: block; margin-bottom: 15px; }
+        .ok { background: #28a745; }
+        .erro { background: #dc3545; }
+        p { color: #666; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <h1>Painel de Controle - Refrigeração</h1>
+    
+    <div class="card">
+        <h2>Câmara 01</h2>
+        <div id="display-temp" class="temp">--°C</div>
+        <div id="status-box" class="status">Conectando...</div>
+        <p>Última leitura do sensor:<br><span id="time">--:--:--</span></p>
+    </div>
+
+    <script>
+        // Seus dados do Adafruit IO
         const USER = 'GGELADO';
         const KEY = 'aio_AEkP23ACmVQhWVqmGVixG05L0w8S';
         const FEED = 'temperatura';
 
         async function atualizarDados() {
-            // A URL correta é esta abaixo, que busca o ÚLTIMO dado enviado (data/last)
+            // URL da API para pegar o ÚLTIMO dado enviado
             const url = `https://io.adafruit.com/api/v2/${USER}/feeds/${FEED}/data/last?x-aio-key=${KEY}`;
             
             try {
                 const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error('Erro na resposta da API');
+                }
+
                 const data = await response.json();
                 
-                // O Adafruit retorna o valor dentro de data.value
-                const valor = parseFloat(data.value).toFixed(1);
-                
-                if (data.value !== undefined) {
+                if (data && data.value !== undefined) {
+                    const valor = parseFloat(data.value).toFixed(1);
+                    
+                    // Atualiza o valor na tela
                     document.getElementById('display-temp').innerText = valor + "°C";
-                    document.getElementById('time').innerText = new Date(data.created_at).toLocaleTimeString();
+                    
+                    // Atualiza o horário (converte o padrão do Adafruit para o nosso)
+                    const dataLeitura = new Date(data.created_at);
+                    document.getElementById('time').innerText = dataLeitura.toLocaleTimeString('pt-BR');
 
-                    // Lógica de cor do status
+                    // Lógica de alerta (maior que 8 graus)
                     const statusBox = document.getElementById('status-box');
                     if (valor > 8) {
-                        statusBox.innerText = "ALERTA: ALTA";
+                        statusBox.innerText = "ALERTA: TEMPERATURA ALTA";
                         statusBox.className = "status erro";
                     } else {
-                        statusBox.innerText = "STATUS: OK";
+                        statusBox.innerText = "STATUS: OPERAÇÃO OK";
                         statusBox.className = "status ok";
                     }
                 }
 
             } catch (error) {
                 console.error("Erro ao buscar dados:", error);
-                document.getElementById('display-temp').innerText = "Erro API";
+                document.getElementById('display-temp').innerText = "OFFLINE";
+                document.getElementById('status-box').innerText = "Erro de Conexão";
+                document.getElementById('status-box').className = "status erro";
             }
         }
 
-        // Atualiza a cada 5 segundos
+        // Tenta atualizar a cada 5 segundos
         setInterval(atualizarDados, 5000);
-        atualizarDados(); 
+        
+        // Chama a função imediatamente ao carregar a página
+        atualizarDados();
     </script>
+</body>
+</html>
