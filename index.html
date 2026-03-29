@@ -8,10 +8,10 @@
         .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; min-width: 300px; }
         h1 { color: #333; margin-bottom: 30px; }
         .temp { font-size: 64px; font-weight: bold; color: #007bff; margin: 20px 0; }
-        .status { padding: 10px 20px; border-radius: 8px; color: white; font-weight: bold; font-size: 1.2em; display: block; margin-bottom: 15px; }
+        .status { padding: 10px 20px; border-radius: 8px; color: white; font-weight: bold; font-size: 1.2em; display: block; margin-bottom: 15px; min-height: 25px; }
         .ok { background: #28a745; }
         .erro { background: #dc3545; }
-        p { color: #666; font-size: 0.9em; }
+        p { color: #666; font-size: 0.9em; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -21,6 +21,9 @@
     <div class="card">
         <h2>Câmara 01</h2>
         <div id="display-temp" class="temp">--°C</div>
+        
+        <div id="status-box" class="status">Conectando...</div>
+        
         <p>Última leitura do sensor:<br><span id="time">--:--:--</span></p>
     </div>
 
@@ -29,33 +32,24 @@
         const p1 = 'aio_ZMfK26';
         const p2 = 'W9UNNiTSwO3iXLUa6arZn8';
         const KEY = p1 + p2;
-        
         const FEED = 'temperatura';
 
         async function atualizarDados() {
-            // URL da API para pegar o ÚLTIMO dado enviado
             const url = `https://io.adafruit.com/api/v2/${USER}/feeds/${FEED}/data/last?x-aio-key=${KEY}`;
             
             try {
                 const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error('Erro na resposta da API');
-                }
+                if (!response.ok) throw new Error('Erro na API');
 
                 const data = await response.json();
                 
                 if (data && data.value !== undefined) {
                     const valor = parseFloat(data.value).toFixed(1);
-                    
-                    // Atualiza o valor na tela
                     document.getElementById('display-temp').innerText = valor + "°C";
                     
-                    // Atualiza o horário (converte o padrão do Adafruit para o nosso)
                     const dataLeitura = new Date(data.created_at);
                     document.getElementById('time').innerText = dataLeitura.toLocaleTimeString('pt-BR');
 
-                    // Lógica de alerta (maior que 8 graus)
                     const statusBox = document.getElementById('status-box');
                     if (valor > 8) {
                         statusBox.innerText = "ALERTA: TEMPERATURA ALTA";
@@ -65,19 +59,16 @@
                         statusBox.className = "status ok";
                     }
                 }
-
             } catch (error) {
-                console.error("Erro ao buscar dados:", error);
+                console.error(error);
                 document.getElementById('display-temp').innerText = "OFFLINE";
-                document.getElementById('status-box').innerText = "Erro de Conexão";
-                document.getElementById('status-box').className = "status erro";
+                const sb = document.getElementById('status-box');
+                sb.innerText = "Erro de Conexão";
+                sb.className = "status erro";
             }
         }
 
-        // Tenta atualizar a cada 5 segundos
         setInterval(atualizarDados, 5000);
-        
-        // Chama a função imediatamente ao carregar a página
         atualizarDados();
     </script>
 </body>
