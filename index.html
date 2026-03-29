@@ -1,63 +1,41 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Monitoramento de Câmaras Frias</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; text-align: center; padding: 50px; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; min-width: 250px; }
-        h1 { color: #333; }
-        .temp { font-size: 48px; font-weight: bold; color: #007bff; margin: 20px 0; }
-        .status { padding: 5px 10px; border-radius: 5px; color: white; font-weight: bold; }
-        .ok { background: #28a745; }
-        .erro { background: #dc3545; }
-    </style>
-</head>
-<body>
-
-    <h1>Painel de Controle - Refrigeração</h1>
-    
-    <div class="card">
-        <h2>Câmara 01</h2>
-        <div id="display-temp" class="temp">--°C</div>
-        <div id="status-box" class="status">Iniciando...</div>
-        <p>Última atualização: <span id="time">--:--:--</span></p>
-    </div>
-
-    <script>
+<script>
         const USER = 'GGELADO';
         const KEY = 'aio_AEkP23ACmVQhWVqmGVixG05L0w8S';
         const FEED = 'temperatura';
 
         async function atualizarDados() {
-            const url = `https://io.adafruit.com/GGELADO/feeds/temperatura`;
+            // A URL correta é esta abaixo, que busca o ÚLTIMO dado enviado (data/last)
+            const url = `https://io.adafruit.com/api/v2/${USER}/feeds/${FEED}/data/last?x-aio-key=${KEY}`;
             
             try {
                 const response = await fetch(url);
                 const data = await response.json();
+                
+                // O Adafruit retorna o valor dentro de data.value
                 const valor = parseFloat(data.value).toFixed(1);
                 
-                document.getElementById('display-temp').innerText = valor + "°C";
-                document.getElementById('time').innerText = new Date().toLocaleTimeString();
+                if (data.value !== undefined) {
+                    document.getElementById('display-temp').innerText = valor + "°C";
+                    document.getElementById('time').innerText = new Date(data.created_at).toLocaleTimeString();
 
-                // Lógica de cor do status
-                const statusBox = document.getElementById('status-box');
-                if (valor > 8) {
-                    statusBox.innerText = "ALERTA: ALTA";
-                    statusBox.className = "status erro";
-                } else {
-                    statusBox.innerText = "STATUS: OK";
-                    statusBox.className = "status ok";
+                    // Lógica de cor do status
+                    const statusBox = document.getElementById('status-box');
+                    if (valor > 8) {
+                        statusBox.innerText = "ALERTA: ALTA";
+                        statusBox.className = "status erro";
+                    } else {
+                        statusBox.innerText = "STATUS: OK";
+                        statusBox.className = "status ok";
+                    }
                 }
 
             } catch (error) {
                 console.error("Erro ao buscar dados:", error);
+                document.getElementById('display-temp').innerText = "Erro API";
             }
         }
 
         // Atualiza a cada 5 segundos
         setInterval(atualizarDados, 5000);
-        atualizarDados(); // Primeira chamada ao carregar
+        atualizarDados(); 
     </script>
-</body>
-</html>
