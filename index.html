@@ -5,10 +5,14 @@
     <title>Monitoramento de Câmaras Frias</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f4; text-align: center; padding: 50px; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; min-width: 300px; }
         h1 { color: #333; margin-bottom: 30px; }
+        
+        /* Container para os cards ficarem lado a lado */
+        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; }
         .temp { font-size: 64px; font-weight: bold; color: #007bff; margin: 20px 0; }
-        .status { padding: 10px 20px; border-radius: 8px; color: white; font-weight: bold; font-size: 1.2em; display: block; margin-bottom: 15px; min-height: 25px; }
+        .status { padding: 10px 20px; border-radius: 8px; color: white; font-weight: bold; font-size: 1.1em; display: block; margin-bottom: 15px; min-height: 25px; }
         .ok { background: #28a745; }
         .erro { background: #dc3545; }
         p { color: #666; font-size: 0.9em; margin-top: 20px; }
@@ -18,13 +22,20 @@
 
     <h1>Painel de Controle - Refrigeração</h1>
     
-    <div class="card">
-        <h2>Câmara 01</h2>
-        <div id="display-temp" class="temp">--°C</div>
-        
-        <div id="status-box" class="status">Iniciando...</div>
-        
-        <p style="margin-top: 20px;">Última leitura do sensor:<br><span id="time">--:--:--</span></p>
+    <div class="container">
+        <div class="card">
+            <h2>Câmara CAF</h2>
+            <div id="temp-caf" class="temp">--°C</div>
+            <div id="status-caf" class="status">Iniciando...</div>
+            <p>Última leitura:<br><span id="time-caf">--:--:--</span></p>
+        </div>
+
+        <div class="card">
+            <h2>Câmara CPC</h2>
+            <div id="temp-cpc" class="temp">--°C</div>
+            <div id="status-cpc" class="status">Iniciando...</div>
+            <p>Última leitura:<br><span id="time-cpc">--:--:--</span></p>
+        </div>
     </div>
 
     <script>
@@ -32,10 +43,11 @@
         const p1 = 'aio_ZMfK26';
         const p2 = 'W9UNNiTSwO3iXLUa6arZn8';
         const KEY = p1 + p2;
-        const FEED = 'temperatura';
 
-        async function atualizarDados() {
-            const url = `https://io.adafruit.com/api/v2/${USER}/feeds/${FEED}/data/last?x-aio-key=${KEY}`;
+        // Função genérica para atualizar qualquer câmara
+        async function atualizarCamara(feedName, tempId, statusId, timeId) {
+            // Importante: O Adafruit costuma converter nomes para minúsculas nos links da API
+            const url = `https://io.adafruit.com/api/v2/${USER}/feeds/${feedName.toLowerCase()}/data/last?x-aio-key=${KEY}`;
             
             try {
                 const response = await fetch(url);
@@ -45,31 +57,41 @@
                 
                 if (data && data.value !== undefined) {
                     const valor = parseFloat(data.value).toFixed(1);
-                    document.getElementById('display-temp').innerText = valor + "°C";
                     
+                    // Atualiza Temperatura
+                    document.getElementById(tempId).innerText = valor + "°C";
+                    
+                    // Atualiza Horário
                     const dataLeitura = new Date(data.created_at);
-                    document.getElementById('time').innerText = dataLeitura.toLocaleTimeString('pt-BR');
+                    document.getElementById(timeId).innerText = dataLeitura.toLocaleTimeString('pt-BR');
 
-                    const statusBox = document.getElementById('status-box');
+                    // Lógica de Alerta
+                    const statusBox = document.getElementById(statusId);
                     if (valor > 8) {
-                        statusBox.innerText = "ALERTA: TEMPERATURA ALTA";
+                        statusBox.innerText = "ALERTA: ALTA";
                         statusBox.className = "status erro";
                     } else {
-                        statusBox.innerText = "STATUS: OPERAÇÃO OK";
+                        statusBox.innerText = "STATUS: OK";
                         statusBox.className = "status ok";
                     }
                 }
             } catch (error) {
-                console.error(error);
-                document.getElementById('display-temp').innerText = "OFFLINE";
-                const sb = document.getElementById('status-box');
+                document.getElementById(tempId).innerText = "OFF";
+                const sb = document.getElementById(statusId);
                 sb.innerText = "Erro de Conexão";
                 sb.className = "status erro";
             }
         }
 
-        setInterval(atualizarDados, 5000);
-        atualizarDados();
+        // Função que dispara a atualização de todas as câmaras
+        function atualizarPainel() {
+            atualizarCamara('Temperatura-camara-CAF', 'temp-caf', 'status-caf', 'time-caf');
+            atualizarCamara('Temperatura-camara-CPC', 'temp-cpc', 'status-cpc', 'time-cpc');
+        }
+
+        // Executa e define intervalo
+        setInterval(atualizarPainel, 5000);
+        atualizarPainel();
     </script>
 </body>
 </html>
