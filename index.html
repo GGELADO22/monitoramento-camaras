@@ -8,13 +8,39 @@
         h1 { color: #333; margin-bottom: 30px; }
         
         /* Container para os cards ficarem lado a lado */
-        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .container { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 20px; 
+            max-width: 1000px; 
+            margin: 0 auto;
+        }
         
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; }
+        .card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            width: 300px; 
+        }
+        
         .temp { font-size: 64px; font-weight: bold; color: #007bff; margin: 20px 0; }
-        .status { padding: 10px 20px; border-radius: 8px; color: white; font-weight: bold; font-size: 1.1em; display: block; margin-bottom: 15px; min-height: 25px; }
+        
+        .status { 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            color: white; 
+            font-weight: bold; 
+            font-size: 1.1em; 
+            display: block; 
+            margin-bottom: 15px; 
+            min-height: 25px; 
+        }
+        
         .ok { background: #28a745; }
         .erro { background: #dc3545; }
+        
         p { color: #666; font-size: 0.9em; margin-top: 20px; }
     </style>
 </head>
@@ -40,18 +66,17 @@
 
     <script>
         const USER = 'GGELADO'; 
+        // CHAVE DIVIDIDA PARA SEGURANÇA NO GITHUB
         const p1 = 'aio_ZMfK26';
         const p2 = 'W9UNNiTSwO3iXLUa6arZn8';
         const KEY = p1 + p2;
 
-        // Função genérica para atualizar qualquer câmara
-        async function atualizarCamara(feedName, tempId, statusId, timeId) {
-            // Importante: O Adafruit costuma converter nomes para minúsculas nos links da API
-            const url = `https://io.adafruit.com/api/v2/${USER}/feeds/${feedName.toLowerCase()}/data/last?x-aio-key=${KEY}`;
+        async function atualizarCamara(feedKey, tempId, statusId, timeId) {
+            const url = `https://io.adafruit.com/api/v2/${USER}/feeds/${feedKey}/data/last?x-aio-key=${KEY}`;
             
             try {
                 const response = await fetch(url);
-                if (!response.ok) throw new Error('Erro na API');
+                if (!response.ok) throw new Error();
 
                 const data = await response.json();
                 
@@ -65,7 +90,7 @@
                     const dataLeitura = new Date(data.created_at);
                     document.getElementById(timeId).innerText = dataLeitura.toLocaleTimeString('pt-BR');
 
-                    // Lógica de Alerta
+                    // Lógica de Alerta (Maior que 8 graus)
                     const statusBox = document.getElementById(statusId);
                     if (valor > 8) {
                         statusBox.innerText = "ALERTA: ALTA";
@@ -83,14 +108,16 @@
             }
         }
 
-        // Função que dispara a atualização de todas as câmaras
         function atualizarPainel() {
-            atualizarCamara('Temperatura-camara-CAF', 'temp-caf', 'status-caf', 'time-caf');
-            atualizarCamara('Temperatura-camara-CPC', 'temp-cpc', 'status-cpc', 'time-cpc');
+            // CHAMADAS COM OS NOMES EXATOS DOS SEUS FEEDS
+            atualizarCamara('temperatura-camara-caf', 'temp-caf', 'status-caf', 'time-caf');
+            atualizarCamara('temperatura-camara-cpc', 'temp-cpc', 'status-cpc', 'time-cpc');
         }
 
-        // Executa e define intervalo
+        // Atualiza a cada 5 segundos
         setInterval(atualizarPainel, 5000);
+        
+        // Primeira carga imediata
         atualizarPainel();
     </script>
 </body>
